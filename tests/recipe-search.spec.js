@@ -20,7 +20,7 @@ test.describe('Tarla Dalal recipe search - Add to DB', () => {
     test(`Search recipes using ingredient: ${ingredient}`, async ({ page }) => {
       const homePage = new HomePage(page);
       const resultsPage = new SearchResultsPage(page);
-      const recipePage = new RecipePage(page);
+    //  const recipePage = new RecipePage(page);
 
       await homePage.searchRecipeByIngredient(ingredient);
       const recipeLinks = await resultsPage.getRecipeLinks(config.maxRecipesPerIngredient);
