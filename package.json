@@ -1,0 +1,29 @@
+{
+  "name": "tarladalal-playwright-hybrid",
+  "version": "1.0.0",
+  "description": "Playwright JavaScript Hybrid Framework with POM, Excel input, and PostgreSQL output for Tarla Dalal recipe extraction",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "report": "playwright show-report",
+    "db:init": "node scripts/init-db.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@types/node": "^25.9.3"
+  },
+  "dependencies": {
+    "dotenv": "latest",
+    "pg": "latest",
+    "xlsx": "latest"
+  },
+  "directories": {
+    "test": "tests"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
