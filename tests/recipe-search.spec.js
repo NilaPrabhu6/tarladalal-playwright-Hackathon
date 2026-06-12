@@ -4,7 +4,7 @@ const { readIngredients } = require('../utils/excelReader');
 const { insertRecipe, closeDb } = require('../utils/dbClient');
 const { HomePage } = require('../pages/HomePage');
 const { SearchResultsPage } = require('../pages/SearchResultsPage');
-const { RecipePage } = require('../pages/RecipePage');
+//const { RecipePage } = require('../pages/RecipePage');
 
 const ingredients = readIngredients(config.excelPath);
 
