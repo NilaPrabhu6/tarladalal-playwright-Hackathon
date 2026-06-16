@@ -80,7 +80,6 @@ async scrapeRecipes (page, recipeurl) {
     });
   } catch (error) {
     console.log(`Skipping URL due to navigation error: ${cleanUrl}`);
-    console.log(error.message);
     return null;
   }
   const recipeName = await page.locator('h1, h1.rec-heading, .rec-heading')
@@ -96,17 +95,17 @@ async scrapeRecipes (page, recipeurl) {
     pageText.match(/Recipe#\s*(\d+)/i)?.[1] ||
     '';
 
-  const preparationTime =
+  const preparationTime = 
     pageText.match(/Preparation Time\s*:\s*([^\n]+)/i)?.[1]?.trim() || '';
 
-  const cookingTime =
+  const cookingTime = 
     pageText.match(/Cooking Time\s*:\s*([^\n]+)/i)?.[1]?.trim() || '';
 
-  const makes =
-    pageText.match(/Makes\s*:\s*([^\n]+)/i)?.[1]?.trim() ||
+  const makes = 
+   pageText.match(/Makes\s*:\s*([^\n]+)/i)?.[1]?.trim() ||
     pageText.match(/Serves\s*:\s*([^\n]+)/i)?.[1]?.trim() ||
     '';
-
+/*
   const ingredients = await getAllTextsIfAvailable(
     page.locator('#rcpinglist li, .ingredients li, [itemprop="recipeIngredient"]')
   );
@@ -118,7 +117,7 @@ async scrapeRecipes (page, recipeurl) {
   const rating =
     await getTextIfAvailable(page.locator('[itemprop="ratingValue"], .ratingValue')) ||
     pageText.match(/Rating\s*:\s*([0-9.]+)/i)?.[1] ||
-    '';
+    '';*/
 
   return {
     recipeName,
@@ -126,14 +125,30 @@ async scrapeRecipes (page, recipeurl) {
     preparationTime,
     cookingTime,
     makes,
-    ingredients,
-    method,
-    rating,
     recipeUrl: page.url().split('#')[0]
   };
 }
 
-  
+async getAllTextsIfAvailable(locator) {
+  try {
+    const count = await locator.count();
+
+    if (count === 0) {
+      return '';
+    }
+
+    const texts = await locator.allTextContents();
+
+    return texts
+      .map(text => text.trim())
+      .filter(text => text.length > 0)
+      .join(', ');
+
+  } catch (error) {
+    console.log('Text not available:', error.message);
+    return '';
+  }
+}
 }
 
 module.exports = { Scrapper };

@@ -4,7 +4,7 @@ const XLSX = require('xlsx');
 function readIngredients(excelPath,sheetName) {
   const absolutePath = path.resolve(excelPath);
   const workbook = XLSX.readFile(absolutePath);
-  const sheet = workbook.Sheets[sheetName] || workbook.Sheets[workbook.SheetNames[0]];
+  const sheet = workbook.Sheets[sheetName] ;
   const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
 
   return rows

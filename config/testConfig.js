@@ -9,6 +9,6 @@ module.exports = {
     port: Number(process.env.PGPORT || 5432),
     database: process.env.PGDATABASE || 'recipes_db',
     user: process.env.PGUSER || 'postgres',
-    password: process.env.PGPASSWORD || 'newpassword'
+    password: process.env.PGPASSWORD || 'postgres'
   }
 };

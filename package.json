@@ -4,8 +4,8 @@
   "description": "Playwright JavaScript Hybrid Framework with POM, Excel input, and PostgreSQL output for Tarla Dalal recipe extraction",
   "main": "index.js",
   "scripts": {
-    "test": "playwright test",
-    "test:headed": "playwright test --headed",
+    "test": "playwright test && npx playwright show-report",
+    "test:headed": "playwright test --headed && npx playwright show-report",
     "test:debug": "playwright test --debug",
     "report": "playwright show-report",
     "db:init": "node scripts/init-db.js"
@@ -15,8 +15,8 @@
     "@types/node": "^25.9.3"
   },
   "dependencies": {
-    "dotenv": "latest",
-    "pg": "latest",
+    "dotenv": "^17.4.2",
+    "pg": "^8.21.0",
     "playwright-extra": "^4.3.6",
     "playwright-extra-plugin-stealth": "^0.0.1",
     "xlsx": "latest"

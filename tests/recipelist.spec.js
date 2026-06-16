@@ -13,7 +13,7 @@ const {
  let browser;  let context;  let page;
 
 const { readIngredients } = require('../utils/excelReader');
-const { insertRecipe, closeDb } = require('../utils/dbClient');
+const {createRecipeTable, insertRecipe, closeDb } = require('../utils/dbClient');
 //const { HomePage } = require('../pages/HomePage');
 
 const { cleanUrl, closeGoogleAds } = require('../pages/Adcleanup');
@@ -21,13 +21,8 @@ const { default: playwrightConfig } = require('../playwright.config');
 const config = require('../config/testConfig');
 const {Scrapper}= require('../pages/Scrapper');
 
-const ingredients_LCHEliminate = readIngredients(config.excelPath, 'LCH ELIMINATE');
-const ingredients_LCHAdd = readIngredients(config.excelPath, 'LCH ADD');
-const ingredients_LFVAdd = readIngredients(config.excelPath, 'LFV ADD');
-const ingredients_LFVEliminate = readIngredients(config.excelPath, 'LFV ELIMINATE');
 
-
-test.beforeAll(async () => {
+test.beforeEach(async () => {
 browser = await chromium.launch({
       headless: false,
       args: [
@@ -54,13 +49,18 @@ browser = await chromium.launch({
 
     await waitForCloudflareChallenge(page, 30000);
     await randomDelay(2000, 4000);
+   
     
 }); 
 
-test.afterAll(async (page) => {
+test.afterEach(async (page) => {
   await browser.close();
+  
 });
 
+test.afterAll(async()=> {
+await closeDb();
+});
   test('should bypass Cloudflare and confirm site is accessible', async () => {
     const blocked = await isCloudflareBlocked(page);
     const title = await page.title();
@@ -70,11 +70,14 @@ test.afterAll(async (page) => {
 
     test('Extract recipe links for LCH diet with added ingredient:', async ({page}) => {
       const scrapper = new Scrapper(page);
-      const ingredients = readIngredients(config.excelPath, 'LCH ADD');
-    await page.goto('https://www.tarladalal.com/indian-recipe-using-list/', { waitUntil: 'domcontentloaded' });
-    expect(page.url()).toBe('https://www.tarladalal.com/indian-recipe-using-list/');
+      const ingredients = readIngredients(config.excelPath, 'LCH_ADD');
+       await createRecipeTable("LCH_ADD");
+       await page.goto('https://www.tarladalal.com/indian-recipe-using-list/', { waitUntil: 'domcontentloaded' });
+    //   expect(page.url()).toBe('https://www.tarladalal.com/indian-recipe-using-list/');
 
 console.log('Page loaded successfully. Extracting recipe links...');
+
+//Filtering the recipes using test data input
   const recipeLinks = await page.locator('a:has-text("Recipes Using")')
     .evaluateAll(anchors =>
       anchors.map(a => ({
@@ -82,116 +85,10 @@ console.log('Page loaded successfully. Extracting recipe links...');
         url: a.href
       }))
     );
-
-      console.log("Total recipes found: " + recipeLinks.length);
-     // console.log("Recipe Links:");
-    //  recipeLinks.forEach(recipe => console.log(`- ${recipe.text}: ${recipe.url}`));
-    const addlinks = [];
-    for (const ingredient of ingredients_LCHAdd) {
-         for (const recipe of recipeLinks) {
-      if (recipe.text.toLowerCase().includes(ingredient.toLowerCase())) {
-        console.log(`Ingredient: ${ingredient} - Recipe Link: ${recipe.text}`);
-
-        addlinks.push({
-
-          ingredient,
-          recipeName: recipe.text,
-          recipeUrl: recipe.url
-        });
-
-
-    }
-    
-}
-
-}
-  console.log('Recipe URLs found:');
-  console.log(addlinks);
-
-        for (const recipe of addlinks) {
-          //const url = cleanUrl(recipe.recipeUrl);
-          console.log(`Navigating to recipe: ${recipe.recipeName} - URL: ${recipe.recipeUrl}`);
-
-      await page.goto(recipe.recipeUrl, {
-       waitUntil: 'domcontentloaded', timeout: 30000
-     });
-  // await closeGoogleAds(page);
-   var recipeCards = await page
-    .locator("//div[@class='recipe-title']/a")
-    .evaluateAll((anchors, mainRecipeName) =>
-      anchors.map(a => {
-        const panel = a.closest('div');
-        const panelText = panel?.innerText || '';
-        const recipeUrl = a.href;
-
-        return {
-          mainIngredient: mainRecipeName,
-          recipeName: a.textContent.trim(),
-          recipeId: recipeUrl.match(/-(\d+)r$/)?.[1] || '',
-         //alories: panelText.match(/(\d+)\s*calories/i)?.[1] || '',
-        //description: panelText,
-          recipeUrl
-        };
-      }),
-      recipe.recipeName
-    );
-    console.log('Recipes:', recipeCards);
-    const carddata = [];
-    for (const card of recipeCards) {
-const recipeCards_part2 = scrapper.scrapeRecipes(page, card.recipeUrl);
-console.log(`Scrapped Data of ${card.recipeName}`);
-console.log(recipeCards_part2);
-
-if(recipeCards_part2){
-carddata.push(recipeCards_part2);
-}
-recipeCards.concat(carddata);
-//console.log('Total recipes found:', recipeCards.length);
-console.log('Recipes:', recipeCards);
-    }
-}
-});
-
-
- /*
-test('scrap recipes for LFV diet', async ({page}) => {
-
-  for(const ingredient of ingredients_LCHEliminate) {
-    test(`Extract recipe links for LCH diet with eliminated ingredient: ${ingredient}`, async ({page}) => {
-    await page.goto('https://www.tarladalal.com/indian-recipe-using-list/', { waitUntil: 'domcontentloaded' });
-   
-    expect(page.url()).toBe('https://www.tarladalal.com/indian-recipe-using-list/');
-      console.log("Total recipes found: " + recipeLinks.length);
-      console.log("Recipe Links:");
+    console.log("Total recipes found: " + recipeLinks.length);
   
-      const recipelinks = scrapper.getlinksforingredient(ingredient);
-      recipelinks.forEach(recipe => console.log(`- ${recipe.text}: ${recipe.url}`));
-      const recipecards = await scrapper.navigateToRecipe(recipelinks);
-console.log('Eliminated Recipes:', recipecards);});
-  }
-}
-);*/
-
-    test('Extract recipe links for LCH diet with Eliminated ingredient:', async ({page}) => {
-      const scrapper = new Scrapper(page);
-      const ingredients = readIngredients(config.excelPath, 'LCH ELIMINATE');
-    await page.goto('https://www.tarladalal.com/indian-recipe-using-list/', { waitUntil: 'domcontentloaded' });
-    expect(page.url()).toBe('https://www.tarladalal.com/indian-recipe-using-list/');
-
-console.log('Page loaded successfully. Extracting recipe links...');
-  const recipeLinks = await page.locator('a:has-text("Recipes Using")')
-    .evaluateAll(anchors =>
-      anchors.map(a => ({
-        text: a.innerText.trim(),
-        url: a.href
-      }))
-    );
-
-      console.log("Total recipes found: " + recipeLinks.length);
-     // console.log("Recipe Links:");
-    //  recipeLinks.forEach(recipe => console.log(`- ${recipe.text}: ${recipe.url}`));
     const addlinks = [];
-    for (const ingredient of ingredients_LCHAdd) {
+    for (const ingredient of ingredients) {
          for (const recipe of recipeLinks) {
       if (recipe.text.toLowerCase().includes(ingredient.toLowerCase())) {
         console.log(`Ingredient: ${ingredient} - Recipe Link: ${recipe.text}`);
@@ -201,26 +98,22 @@ console.log('Page loaded successfully. Extracting recipe links...');
           ingredient,
           recipeName: recipe.text,
           recipeUrl: recipe.url
+
         });
-
-
     }
-    
 }
 
 }
-  console.log('Recipe URLs found:');
-  console.log(addlinks);
-
+//extracting the links of recipes with added ingredients
         for (const recipe of addlinks) {
-          //const url = cleanUrl(recipe.recipeUrl);
+          const url = cleanUrl(recipe.recipeUrl);
           console.log(`Navigating to recipe: ${recipe.recipeName} - URL: ${recipe.recipeUrl}`);
 
       await page.goto(recipe.recipeUrl, {
        waitUntil: 'domcontentloaded', timeout: 30000
      });
   // await closeGoogleAds(page);
-   var recipeCards = await page
+     var recipeCards = await page
     .locator("//div[@class='recipe-title']/a")
     .evaluateAll((anchors, mainRecipeName) =>
       anchors.map(a => {
@@ -232,26 +125,242 @@ console.log('Page loaded successfully. Extracting recipe links...');
           mainIngredient: mainRecipeName,
           recipeName: a.textContent.trim(),
           recipeId: recipeUrl.match(/-(\d+)r$/)?.[1] || '',
-         //alories: panelText.match(/(\d+)\s*calories/i)?.[1] || '',
-        //description: panelText,
           recipeUrl
         };
       }),
       recipe.recipeName
     );
-    console.log('Recipes:', recipeCards);
+
+    //scraping recipe details 
     const carddata = [];
     for (const card of recipeCards) {
-const recipeCards_part2 = scrapper.scrapeRecipes(page, card.recipeUrl);
-console.log(`Scrapped Data of ${card.recipeName}`);
-console.log(recipeCards_part2);
-
-if(recipeCards_part2){
-carddata.push(recipeCards_part2);
-}
-recipeCards.concat(carddata);
-//console.log('Total recipes found:', recipeCards.length);
-console.log('Recipes:', recipeCards);
+    const recipeCards_Scrapped = await scrapper.scrapeRecipes(page, card.recipeUrl);
+      console.log(`Scrapped Data of ${card.recipeName}`);
+     // console.log(recipeCards_Scrapped);
+    await insertRecipe(recipeCards_Scrapped, "LCH_ADD"); //Adding to DB
     }
 }
 });
+
+test('Extract recipe links for LCH diet with eliminated ingredient:', async ({page}) => {
+      const scrapper = new Scrapper(page);
+      const ingredients = readIngredients(config.excelPath, 'LCH_ELIMINATE');
+       await createRecipeTable("LCH_ELIMINATE");
+       await page.goto('https://www.tarladalal.com/indian-recipe-using-list/', { waitUntil: 'domcontentloaded' });
+      // expect(page.url()).toBe('https://www.tarladalal.com/indian-recipe-using-list/');
+
+       console.log('Page loaded successfully. Extracting recipe links...');
+
+//Filtering the recipes using test data input
+  const recipeLinks = await page.locator('a:has-text("Recipes Using")')
+    .evaluateAll(anchors =>
+      anchors.map(a => ({
+        text: a.innerText.trim(),
+        url: a.href
+      }))
+    );
+    console.log("Total recipes found: " + recipeLinks.length);
+  
+    const addlinks = [];
+    for (const ingredient of ingredients) {
+         for (const recipe of recipeLinks) {
+      if (recipe.text.toLowerCase().includes(ingredient.toLowerCase())) {
+        console.log(`Ingredient: ${ingredient} - Recipe Link: ${recipe.text}`);
+
+        addlinks.push({
+
+          ingredient,
+          recipeName: recipe.text,
+          recipeUrl: recipe.url
+
+        });
+    }
+}
+
+}
+//extracting the links of recipes with added ingredients
+        for (const recipe of addlinks) {
+          const url = cleanUrl(recipe.recipeUrl);
+          console.log(`Navigating to recipe: ${recipe.recipeName} - URL: ${recipe.recipeUrl}`);
+
+      await page.goto(recipe.recipeUrl, {
+       waitUntil: 'domcontentloaded', timeout: 30000
+     });
+  // await closeGoogleAds(page);
+     var recipeCards = await page
+    .locator("//div[@class='recipe-title']/a")
+    .evaluateAll((anchors, mainRecipeName) =>
+      anchors.map(a => {
+        const panel = a.closest('div');
+        const panelText = panel?.innerText || '';
+        const recipeUrl = a.href;
+
+        return {
+          mainIngredient: mainRecipeName,
+          recipeName: a.textContent.trim(),
+          recipeId: recipeUrl.match(/-(\d+)r$/)?.[1] || '',
+          recipeUrl
+        };
+      }),
+      recipe.recipeName
+    );
+
+    //scraping recipe details 
+    const carddata = [];
+    for (const card of recipeCards) {
+    const recipeCards_Scrapped = await scrapper.scrapeRecipes(page, card.recipeUrl);
+      console.log(`Scrapped Data of ${card.recipeName}`);
+    //  console.log(recipeCards_Scrapped);
+    await insertRecipe(recipeCards_Scrapped, "LCH_ELIMINATE"); //Adding to DB
+    }
+}
+});
+
+test('Extract recipe links for LFV diet with Added ingredient:', async ({page}) => {
+      const scrapper = new Scrapper(page);
+      const ingredients = readIngredients(config.excelPath, 'LFV_ADD');
+       await createRecipeTable("LFV_ADD");
+       await page.goto('https://www.tarladalal.com/indian-recipe-using-list/', { waitUntil: 'domcontentloaded' });
+       //expect(page.url()).toBe('https://www.tarladalal.com/indian-recipe-using-list/');
+
+console.log('Page loaded successfully. Extracting recipe links...');
+
+//Filtering the recipes using test data input
+  const recipeLinks = await page.locator('a:has-text("Recipes Using")')
+    .evaluateAll(anchors =>
+      anchors.map(a => ({
+        text: a.innerText.trim(),
+        url: a.href
+      }))
+    );
+    console.log("Total recipes found: " + recipeLinks.length);
+  
+    const addlinks = [];
+    for (const ingredient of ingredients) {
+         for (const recipe of recipeLinks) {
+      if (recipe.text.toLowerCase().includes(ingredient.toLowerCase())) {
+        console.log(`Ingredient: ${ingredient} - Recipe Link: ${recipe.text}`);
+
+        addlinks.push({
+
+          ingredient,
+          recipeName: recipe.text,
+          recipeUrl: recipe.url
+
+        });
+    }
+}
+
+}
+//extracting the links of recipes with added ingredients
+        for (const recipe of addlinks) {
+          const url = cleanUrl(recipe.recipeUrl);
+          console.log(`Navigating to recipe: ${recipe.recipeName} - URL: ${recipe.recipeUrl}`);
+
+      await page.goto(recipe.recipeUrl, {
+       waitUntil: 'domcontentloaded', timeout: 30000
+     });
+  // await closeGoogleAds(page);
+     var recipeCards = await page
+    .locator("//div[@class='recipe-title']/a")
+    .evaluateAll((anchors, mainRecipeName) =>
+      anchors.map(a => {
+        const panel = a.closest('div');
+        const panelText = panel?.innerText || '';
+        const recipeUrl = a.href;
+
+        return {
+          mainIngredient: mainRecipeName,
+          recipeName: a.textContent.trim(),
+          recipeId: recipeUrl.match(/-(\d+)r$/)?.[1] || '',
+          recipeUrl
+        };
+      }),
+      recipe.recipeName
+    );
+
+    //scraping recipe details 
+    const carddata = [];
+    for (const card of recipeCards) {
+    const recipeCards_Scrapped = await scrapper.scrapeRecipes(page, card.recipeUrl);
+      console.log(`Scrapped Data of ${card.recipeName}`);
+     // console.log(recipeCards_Scrapped);
+    await insertRecipe(recipeCards_Scrapped, "LFV_ADD"); //Adding to DB
+    }
+}
+});
+
+test('Extract recipe links for LFV diet with Eliminated ingredient:', async ({page}) => {
+      const scrapper = new Scrapper(page);
+      const ingredients = readIngredients(config.excelPath, 'LFV_ELIMINATE');
+       await createRecipeTable("LFV_ELIMINATE");
+       await page.goto('https://www.tarladalal.com/indian-recipe-using-list/', { waitUntil: 'domcontentloaded' });
+       //expect(page.url()).toBe('https://www.tarladalal.com/indian-recipe-using-list/');
+
+console.log('Page loaded successfully. Extracting recipe links...');
+
+//Filtering the recipes using test data input
+  const recipeLinks = await page.locator('a:has-text("Recipes Using")')
+    .evaluateAll(anchors =>
+      anchors.map(a => ({
+        text: a.innerText.trim(),
+        url: a.href
+      }))
+    );
+    console.log("Total recipes found: " + recipeLinks.length);
+  
+    const addlinks = [];
+    for (const ingredient of ingredients) {
+         for (const recipe of recipeLinks) {
+      if (recipe.text.toLowerCase().includes(ingredient.toLowerCase())) {
+        console.log(`Ingredient: ${ingredient} - Recipe Link: ${recipe.text}`);
+
+        addlinks.push({
+
+          ingredient,
+          recipeName: recipe.text,
+          recipeUrl: recipe.url
+
+        });
+    }
+}
+
+}
+//extracting the links of recipes with added ingredients
+        for (const recipe of addlinks) {
+          const url = cleanUrl(recipe.recipeUrl);
+          console.log(`Navigating to recipe: ${recipe.recipeName} - URL: ${recipe.recipeUrl}`);
+
+      await page.goto(recipe.recipeUrl, {
+       waitUntil: 'domcontentloaded', timeout: 30000
+     });
+  // await closeGoogleAds(page);
+     var recipeCards = await page
+    .locator("//div[@class='recipe-title']/a")
+    .evaluateAll((anchors, mainRecipeName) =>
+      anchors.map(a => {
+        const panel = a.closest('div');
+        const panelText = panel?.innerText || '';
+        const recipeUrl = a.href;
+
+        return {
+          mainIngredient: mainRecipeName,
+          recipeName: a.textContent.trim(),
+          recipeId: recipeUrl.match(/-(\d+)r$/)?.[1] || '',
+          recipeUrl
+        };
+      }),
+      recipe.recipeName
+    );
+
+    //scraping recipe details 
+    const carddata = [];
+    for (const card of recipeCards) {
+    const recipeCards_Scrapped = await scrapper.scrapeRecipes(page, card.recipeUrl);
+      console.log(`Scrapped Data of ${card.recipeName}`);
+     // console.log(recipeCards_Scrapped);
+    await insertRecipe(recipeCards_Scrapped, "LFV_ELIMINATE"); //Adding to DB
+    }
+}
+});
+
