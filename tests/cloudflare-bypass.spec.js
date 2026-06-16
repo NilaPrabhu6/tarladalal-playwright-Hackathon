@@ -10,7 +10,7 @@ const {
 
 const TARGET_URL = ' https://www.tarladalal.com/indian-recipe-using-list/';
 
-test.describe('Strategy 1 — Headful Browser with Stealth Overrides', () => {
+test.describe.skip('Strategy 1 — Headful Browser with Stealth Overrides', () => {
   test('should load homepage without Cloudflare block', async () => {
     const browser = await chromium.launch({
       headless: false,

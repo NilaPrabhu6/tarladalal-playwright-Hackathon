@@ -17,7 +17,8 @@ async function createRecipeTable(tablename) {
 
 
 async function insertRecipe(recipe, tablename) {
-  console.log(recipe.recipeId + recipe.recipeName);
+
+  console.log("Inserting to DB  " + recipe.recipeId +'/n'+ recipe.recipeName);
   const query = `
     INSERT INTO ${tablename} (
       recipe_id,
@@ -40,8 +41,22 @@ async function insertRecipe(recipe, tablename) {
   ]);
 }
 
+async function filterresultrecipes(resulttable, addtable, eliminatetable) {
+  const query = `
+    INSERT INTO ${resulttable}
+    SELECT *
+    FROM ${addtable} where ${addtable}.recipe_url NOT IN
+    (SELECT recipe_url from ${eliminatetable}  );
+  `;
+
+  const result = await pool.query(query);
+
+  console.log('Filtered records inserted');
+
+  return result;
+}
+
 async function closeDb() {
   await pool.end();
 }
-
-module.exports = {createRecipeTable, insertRecipe, closeDb, pool };
+module.exports = {createRecipeTable, insertRecipe,filterresultrecipes, closeDb, pool };

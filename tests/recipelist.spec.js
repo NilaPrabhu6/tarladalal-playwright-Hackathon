@@ -13,8 +13,7 @@ const {
  let browser;  let context;  let page;
 
 const { readIngredients } = require('../utils/excelReader');
-const {createRecipeTable, insertRecipe, closeDb } = require('../utils/dbClient');
-//const { HomePage } = require('../pages/HomePage');
+const {createRecipeTable, insertRecipe, filterresultrecipes, closeDb } = require('../utils/dbClient');
 
 const { cleanUrl, closeGoogleAds } = require('../pages/Adcleanup');
 const { default: playwrightConfig } = require('../playwright.config');
@@ -67,12 +66,17 @@ await closeDb();
     console.log('Scraping test - Page title:', title);
     expect(blocked).toBe(false);
   });
-
-    test('Extract recipe links for LCH diet with added ingredient:', async ({page}) => {
+test.describe("Recipe Scrapping for LCH", () =>{
+   test.describe.configure({
+   mode: 'serial'
+ });
+    test('1. Extract recipe links for LCH diet with added ingredient:', async ({page}) => {
       const scrapper = new Scrapper(page);
       const ingredients = readIngredients(config.excelPath, 'LCH_ADD');
        await createRecipeTable("LCH_ADD");
        await page.goto('https://www.tarladalal.com/indian-recipe-using-list/', { waitUntil: 'domcontentloaded' });
+       await closeGoogleAds(page);
+
     //   expect(page.url()).toBe('https://www.tarladalal.com/indian-recipe-using-list/');
 
 console.log('Page loaded successfully. Extracting recipe links...');
@@ -135,19 +139,19 @@ console.log('Page loaded successfully. Extracting recipe links...');
     const carddata = [];
     for (const card of recipeCards) {
     const recipeCards_Scrapped = await scrapper.scrapeRecipes(page, card.recipeUrl);
-      console.log(`Scrapped Data of ${card.recipeName}`);
+      console.log(`Scrapping Data of ${card.recipeName}`);
      // console.log(recipeCards_Scrapped);
     await insertRecipe(recipeCards_Scrapped, "LCH_ADD"); //Adding to DB
     }
 }
 });
 
-test('Extract recipe links for LCH diet with eliminated ingredient:', async ({page}) => {
+test('2. Extract recipe links for LCH diet with eliminated ingredient:', async ({page}) => {
       const scrapper = new Scrapper(page);
       const ingredients = readIngredients(config.excelPath, 'LCH_ELIMINATE');
        await createRecipeTable("LCH_ELIMINATE");
        await page.goto('https://www.tarladalal.com/indian-recipe-using-list/', { waitUntil: 'domcontentloaded' });
-      // expect(page.url()).toBe('https://www.tarladalal.com/indian-recipe-using-list/');
+      expect(page.url()).toBe('https://www.tarladalal.com/indian-recipe-using-list/');
 
        console.log('Page loaded successfully. Extracting recipe links...');
 
@@ -209,14 +213,27 @@ test('Extract recipe links for LCH diet with eliminated ingredient:', async ({pa
     const carddata = [];
     for (const card of recipeCards) {
     const recipeCards_Scrapped = await scrapper.scrapeRecipes(page, card.recipeUrl);
-      console.log(`Scrapped Data of ${card.recipeName}`);
+      console.log(`Scrapping Data of ${card.recipeName}`);
     //  console.log(recipeCards_Scrapped);
     await insertRecipe(recipeCards_Scrapped, "LCH_ELIMINATE"); //Adding to DB
     }
 }
 });
 
-test('Extract recipe links for LFV diet with Added ingredient:', async ({page}) => {
+test('3. Result table which has approved recipes for LCH:', async ({page}) => {
+await createRecipeTable("Result_Recipes_LCH");
+const result = await filterresultrecipes ("Result_Recipes_LCH", "LCH_ADD", "LCH_ELIMINATE");
+console.log ("Result Recipes for LCH");
+console.log (result.recipe_url);
+
+});
+});
+
+test.describe("Recipe Scrapping for LFV", () =>{
+   test.describe.configure({
+   mode: 'serial'
+ });
+test('1. Extract recipe links for LFV diet with Added ingredient:', async ({page}) => {
       const scrapper = new Scrapper(page);
       const ingredients = readIngredients(config.excelPath, 'LFV_ADD');
        await createRecipeTable("LFV_ADD");
@@ -249,6 +266,7 @@ console.log('Page loaded successfully. Extracting recipe links...');
 
         });
     }
+    
 }
 
 }
@@ -290,7 +308,7 @@ console.log('Page loaded successfully. Extracting recipe links...');
 }
 });
 
-test('Extract recipe links for LFV diet with Eliminated ingredient:', async ({page}) => {
+test('2. Extract recipe links for LFV diet with Eliminated ingredient:', async ({page}) => {
       const scrapper = new Scrapper(page);
       const ingredients = readIngredients(config.excelPath, 'LFV_ELIMINATE');
        await createRecipeTable("LFV_ELIMINATE");
@@ -324,7 +342,6 @@ console.log('Page loaded successfully. Extracting recipe links...');
         });
     }
 }
-
 }
 //extracting the links of recipes with added ingredients
         for (const recipe of addlinks) {
@@ -364,3 +381,11 @@ console.log('Page loaded successfully. Extracting recipe links...');
 }
 });
 
+test('3. Result table which has approved recipes for LFV:', async ({page}) => {
+await createRecipeTable("Result_Recipes_LFV");
+const result = await filterresultrecipes ("Result_Recipes_LFV", "LFV_ADD", "LFV_ELIMINATE");
+console.log ("Result Recipes for LFV");
+console.log (result);
+
+});
+});

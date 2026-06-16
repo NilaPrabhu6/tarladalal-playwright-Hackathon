@@ -1,3 +1,4 @@
+const { cleanUrl, closeGoogleAds } = require('../pages/Adcleanup');
 class Scrapper {
   constructor(page) {
     this.page = page;
@@ -78,6 +79,7 @@ async scrapeRecipes (page, recipeurl) {
       waitUntil: 'domcontentloaded',
       timeout: 120000
     });
+    await closeGoogleAds(page);
   } catch (error) {
     console.log(`Skipping URL due to navigation error: ${cleanUrl}`);
     return null;

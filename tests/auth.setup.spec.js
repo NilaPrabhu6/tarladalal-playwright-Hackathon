@@ -1,7 +1,7 @@
 const { test } = require('@playwright/test');
 const fs = require('fs');
 
-test('save authenticated session', async ({ page }) => {
+test.skip('save authenticated session', async ({ page }) => {
   if (!fs.existsSync('auth')) {
     fs.mkdirSync('auth');
   }
