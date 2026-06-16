@@ -42,9 +42,11 @@ export default defineConfig({
   /* Configure projects for major browsers */
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+name: 'chromium-stealth',     
+ use: {        ...devices['Desktop Chrome'],      
+    channel: 'chrome', // Use real installed Chrome, not Chromium build    
     },
+  }
 /*
     {
       name: 'firefox',

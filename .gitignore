@@ -6,5 +6,5 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
-/pages/RecipePage.js/
-/utils/textUtils.js/
+auth/tarla-auth.json
+.env

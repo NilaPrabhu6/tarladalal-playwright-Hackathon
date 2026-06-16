@@ -11,7 +11,7 @@ class HomePage {
   }
 
   async searchRecipeByIngredient(ingredient) {
-    await this.goto();
+    //await this.goto();
 
     if (!(await this.searchInput.count())) {
       await this.page.goto(`https://www.tarladalal.com/search.aspx?search=${encodeURIComponent(ingredient)}`, { waitUntil: 'domcontentloaded' });
